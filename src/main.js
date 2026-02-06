@@ -17,6 +17,24 @@ const DEFAULTS = {
   starred: [],
 };
 
+const registeredFonts = new Set();
+
+async function ensureFont(name) {
+  const clean = name.replace(/^["']+|["']+$/g, "").trim();
+  if (!clean || registeredFonts.has(clean)) return;
+  registeredFonts.add(clean);
+  try {
+    const dataUrl = await invoke("load_font", { family: clean });
+    if (dataUrl) {
+      const face = new FontFace(clean, `url(${dataUrl})`);
+      const loaded = await face.load();
+      document.fonts.add(loaded);
+    }
+  } catch (e) {
+    console.warn("Font load failed:", e);
+  }
+}
+
 function cssFontFamily(name) {
   const clean = name.replace(/^["']+|["']+$/g, "").trim();
   if (!clean) return "monospace";
@@ -94,12 +112,7 @@ function setTheme(name) {
 async function setFont(name) {
   settings.fontFamily = name;
   const css = cssFontFamily(name);
-  const clean = name.replace(/^["']+|["']+$/g, "").trim();
-  if (clean) {
-    try {
-      await document.fonts.load(`${settings.fontSize}px "${clean}"`);
-    } catch {}
-  }
+  await ensureFont(name);
   for (const [, session] of sessions) {
     session.term.options.fontFamily = css;
     session.fitAddon.fit();
@@ -241,12 +254,7 @@ let tabCounter = 0;
 
 async function createTab(initialCommand) {
   const tabNum = ++tabCounter;
-  const fontName = settings.fontFamily.replace(/^["']+|["']+$/g, "").trim();
-  if (fontName) {
-    try {
-      await document.fonts.load(`${settings.fontSize}px "${fontName}"`);
-    } catch {}
-  }
+  await ensureFont(settings.fontFamily);
   const term = new Terminal({
     fontSize: settings.fontSize,
     fontFamily: cssFontFamily(settings.fontFamily),

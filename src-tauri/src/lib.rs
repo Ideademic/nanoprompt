@@ -143,6 +143,80 @@ fn resize_pty(state: State<'_, PtyState>, id: u32, rows: u16, cols: u16) -> Resu
 }
 
 #[tauri::command]
+fn load_font(family: String) -> Result<Option<String>, String> {
+    let needle = family.replace(' ', "").to_lowercase();
+    if needle.is_empty() {
+        return Ok(None);
+    }
+
+    let home = std::env::var("HOME").unwrap_or_default();
+
+    #[cfg(target_os = "macos")]
+    let dirs = vec![
+        format!("{}/Library/Fonts", home),
+        "/Library/Fonts".to_string(),
+        "/System/Library/Fonts".to_string(),
+    ];
+    #[cfg(target_os = "windows")]
+    let dirs = vec![
+        format!("{}\\Microsoft\\Windows\\Fonts", std::env::var("LOCALAPPDATA").unwrap_or_default()),
+        "C:\\Windows\\Fonts".to_string(),
+    ];
+    #[cfg(target_os = "linux")]
+    let dirs = vec![
+        format!("{}/.local/share/fonts", home),
+        "/usr/share/fonts".to_string(),
+        "/usr/local/share/fonts".to_string(),
+    ];
+
+    let mut candidates: Vec<std::path::PathBuf> = Vec::new();
+
+    for dir in &dirs {
+        collect_fonts(dir.as_ref(), &needle, &mut candidates);
+    }
+
+    // Prefer Regular weight
+    candidates.sort_by(|a, b| {
+        let a_reg = a.to_string_lossy().to_lowercase().contains("regular");
+        let b_reg = b.to_string_lossy().to_lowercase().contains("regular");
+        b_reg.cmp(&a_reg)
+    });
+
+    if let Some(path) = candidates.first() {
+        let data = std::fs::read(path).map_err(|e| e.to_string())?;
+        let b64 = base64_encode(&data);
+        let ext = match path.extension().and_then(|e| e.to_str()) {
+            Some("otf") => "opentype",
+            _ => "truetype",
+        };
+        return Ok(Some(format!("data:font/{};base64,{}", ext, b64)));
+    }
+
+    Ok(None)
+}
+
+fn collect_fonts(dir: &std::path::Path, needle: &str, out: &mut Vec<std::path::PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_fonts(&path, needle, out);
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().to_lowercase();
+        if !(name.ends_with(".otf") || name.ends_with(".ttf") || name.ends_with(".ttc")) {
+            continue;
+        }
+        // Strip extension, then check if filename starts with needle
+        let stem = name.rsplitn(2, '.').last().unwrap_or(&name);
+        let stem_clean = stem.replace(['-', '_'], "");
+        if stem_clean.starts_with(needle) {
+            out.push(path);
+        }
+    }
+}
+
+#[tauri::command]
 fn close_pty(state: State<'_, PtyState>, id: u32) -> Result<(), String> {
     let mut sessions = state.sessions.lock().map_err(|e| e.to_string())?;
     if let Some(mut session) = sessions.remove(&id) {
@@ -164,6 +238,7 @@ pub fn run() {
             write_pty,
             resize_pty,
             close_pty,
+            load_font,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
