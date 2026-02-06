@@ -91,9 +91,15 @@ function setTheme(name) {
   saveSettings();
 }
 
-function setFont(name) {
+async function setFont(name) {
   settings.fontFamily = name;
   const css = cssFontFamily(name);
+  const clean = name.replace(/^["']+|["']+$/g, "").trim();
+  if (clean) {
+    try {
+      await document.fonts.load(`${settings.fontSize}px "${clean}"`);
+    } catch {}
+  }
   for (const [, session] of sessions) {
     session.term.options.fontFamily = css;
     session.fitAddon.fit();
@@ -235,6 +241,12 @@ let tabCounter = 0;
 
 async function createTab(initialCommand) {
   const tabNum = ++tabCounter;
+  const fontName = settings.fontFamily.replace(/^["']+|["']+$/g, "").trim();
+  if (fontName) {
+    try {
+      await document.fonts.load(`${settings.fontSize}px "${fontName}"`);
+    } catch {}
+  }
   const term = new Terminal({
     fontSize: settings.fontSize,
     fontFamily: cssFontFamily(settings.fontFamily),
@@ -402,6 +414,14 @@ document.addEventListener("keydown", (e) => {
       closeConfig();
     }
     starMenu.classList.add("hidden");
+  }
+});
+
+// --- Disable default context menu outside terminal ---
+
+document.addEventListener("contextmenu", (e) => {
+  if (!e.target.closest(".xterm")) {
+    e.preventDefault();
   }
 });
 
