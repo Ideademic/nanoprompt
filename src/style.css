@@ -421,3 +421,71 @@ body {
   background: var(--button-hover-bg);
   color: var(--tab-active-text);
 }
+
+/* --- Quit confirmation overlay --- */
+
+#quit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+#quit-overlay.hidden {
+  display: none;
+}
+
+#quit-panel {
+  background: var(--sidebar-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 20px 24px;
+  width: 320px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  text-align: center;
+}
+
+#quit-message {
+  color: var(--tab-active-text);
+  font-size: 14px;
+  margin-bottom: 18px;
+  line-height: 1.4;
+}
+
+.quit-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.quit-buttons button {
+  padding: 7px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+#quit-cancel {
+  background: var(--button-bg);
+  color: var(--tab-text);
+}
+
+#quit-cancel:hover {
+  background: var(--button-hover-bg);
+  color: var(--tab-active-text);
+}
+
+#quit-confirm {
+  background: #c24038;
+  color: #fff;
+  border-color: #c24038;
+}
+
+#quit-confirm:hover {
+  background: #d4524a;
+}

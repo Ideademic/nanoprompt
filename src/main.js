@@ -70,6 +70,10 @@ const starredListEl = document.getElementById("starred-list");
 const starredNameInput = document.getElementById("starred-name");
 const starredCmdInput = document.getElementById("starred-cmd");
 const starredAddBtn = document.getElementById("starred-add-btn");
+const quitOverlay = document.getElementById("quit-overlay");
+const quitMessage = document.getElementById("quit-message");
+const quitCancel = document.getElementById("quit-cancel");
+const quitConfirm = document.getElementById("quit-confirm");
 
 // --- Base64 decode ---
 
@@ -330,7 +334,7 @@ async function createTab(initialCommand) {
   term.onData((data) => invoke("write_pty", { id, data }));
   term.onResize(({ rows, cols }) => invoke("resize_pty", { id, rows, cols }));
 
-  sessions.set(id, { term, fitAddon, wrapper, tabEl, tabNum, title: null });
+  sessions.set(id, { term, fitAddon, wrapper, tabEl, tabNum, title: null, exited: false });
   switchTab(id);
 
   // Execute starred command after shell has time to initialize
@@ -389,6 +393,7 @@ listen("pty-exit", (event) => {
   const id = event.payload;
   const session = sessions.get(id);
   if (session) {
+    session.exited = true;
     session.term.write("\r\n\x1b[90m[Process exited]\x1b[0m\r\n");
   }
 });
@@ -418,11 +423,41 @@ document.addEventListener("keydown", (e) => {
     }
   }
   if (e.key === "Escape") {
-    if (!configOverlay.classList.contains("hidden")) {
+    if (!quitOverlay.classList.contains("hidden")) {
+      quitOverlay.classList.add("hidden");
+      const session = sessions.get(activeId);
+      if (session) session.term.focus();
+    } else if (!configOverlay.classList.contains("hidden")) {
       closeConfig();
     }
     starMenu.classList.add("hidden");
   }
+});
+
+// --- Quit confirmation ---
+
+listen("confirm-quit", () => {
+  let running = 0;
+  for (const [, session] of sessions) {
+    if (!session.exited) running++;
+  }
+  if (running === 0) {
+    invoke("force_quit");
+    return;
+  }
+  quitMessage.textContent =
+    `You have ${running} active session${running === 1 ? "" : "s"}. Quit nanoprompt?`;
+  quitOverlay.classList.remove("hidden");
+});
+
+quitCancel.addEventListener("click", () => {
+  quitOverlay.classList.add("hidden");
+  const session = sessions.get(activeId);
+  if (session) session.term.focus();
+});
+
+quitConfirm.addEventListener("click", () => {
+  invoke("force_quit");
 });
 
 // --- Disable default context menu outside terminal ---

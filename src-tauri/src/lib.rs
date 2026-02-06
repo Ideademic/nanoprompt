@@ -1,14 +1,15 @@
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize, Child};
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, State};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::{Arc, Mutex};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 struct PtySession {
     master: Box<dyn MasterPty + Send>,
     writer: Box<dyn Write + Send>,
     child: Box<dyn Child + Send + Sync>,
+    exited: Arc<AtomicBool>,
 }
 
 struct PtyState {
@@ -73,14 +74,17 @@ fn create_pty(
     let mut reader = master.try_clone_reader().map_err(|e| e.to_string())?;
 
     let id = state.next_id.fetch_add(1, Ordering::Relaxed);
+    let exited = Arc::new(AtomicBool::new(false));
 
     // Spawn reader thread
     let app_handle = app.clone();
+    let exited_flag = exited.clone();
     std::thread::spawn(move || {
         let mut buf = [0u8; 4096];
         loop {
             match reader.read(&mut buf) {
                 Ok(0) => {
+                    exited_flag.store(true, Ordering::Relaxed);
                     let _ = app_handle.emit("pty-exit", id);
                     break;
                 }
@@ -92,6 +96,7 @@ fn create_pty(
                     }));
                 }
                 Err(_) => {
+                    exited_flag.store(true, Ordering::Relaxed);
                     let _ = app_handle.emit("pty-exit", id);
                     break;
                 }
@@ -103,6 +108,7 @@ fn create_pty(
         master,
         writer,
         child,
+        exited,
     };
 
     state
@@ -225,9 +231,20 @@ fn close_pty(state: State<'_, PtyState>, id: u32) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn force_quit(app: AppHandle) {
+    app.exit(0);
+}
+
+fn has_running_sessions(app: &AppHandle) -> bool {
+    let state = app.state::<PtyState>();
+    let sessions = state.sessions.lock().unwrap();
+    sessions.values().any(|s| !s.exited.load(Ordering::Relaxed))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(PtyState {
             sessions: Mutex::new(HashMap::new()),
@@ -239,7 +256,37 @@ pub fn run() {
             resize_pty,
             close_pty,
             load_font,
+            force_quit,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|app_handle, event| {
+        match event {
+            #[cfg(target_os = "macos")]
+            tauri::RunEvent::Reopen { .. } => {
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+            tauri::RunEvent::ExitRequested { api, .. } => {
+                if has_running_sessions(app_handle) {
+                    api.prevent_exit();
+                    if let Some(window) = app_handle.get_webview_window("main") {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                        let _ = app_handle.emit("confirm-quit", ());
+                    }
+                }
+            }
+            _ => {}
+        }
+    });
 }
