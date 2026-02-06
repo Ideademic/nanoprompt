@@ -298,6 +298,15 @@ async function createTab(initialCommand) {
     }
   });
 
+  term.attachCustomKeyEventHandler((e) => {
+    if (e.type === "keydown" && e.key === "Enter" && e.shiftKey) {
+      e.preventDefault();
+      invoke("write_pty", { id, data: "\x1b\r" });
+      return false;
+    }
+    return true;
+  });
+
   term.onData((data) => invoke("write_pty", { id, data }));
   term.onResize(({ rows, cols }) => invoke("resize_pty", { id, rows, cols }));
 
