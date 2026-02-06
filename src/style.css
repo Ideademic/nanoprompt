@@ -1,0 +1,423 @@
+:root {
+  --sidebar-bg: #2a2a2a;
+  --tab-bg: #2a2a2a;
+  --tab-active-bg: #3c3c3c;
+  --tab-hover-bg: #353535;
+  --tab-text: #aaaaaa;
+  --tab-active-text: #ffffff;
+  --accent: #6c99bb;
+  --button-bg: #3c3c3c;
+  --button-hover-bg: #454545;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #323232;
+}
+
+body {
+  display: flex;
+}
+
+#sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  user-select: none;
+}
+
+#tabs {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--tab-text);
+  font-size: 13px;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+
+.tab:hover {
+  background: var(--tab-hover-bg);
+  color: var(--tab-active-text);
+}
+
+.tab.active {
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+}
+
+.tab-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-close {
+  opacity: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 14px;
+  color: var(--tab-text);
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.tab:hover .tab-close {
+  opacity: 1;
+}
+
+.tab-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--tab-active-text);
+}
+
+/* --- Split new-tab button --- */
+
+#new-tab-row {
+  margin: 4px 8px;
+  display: flex;
+  position: relative;
+}
+
+#new-tab {
+  flex: 1;
+  padding: 6px;
+  background: var(--button-bg);
+  border: none;
+  border-radius: 4px 0 0 4px;
+  color: var(--tab-text);
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+#new-tab:hover {
+  background: var(--button-hover-bg);
+  color: var(--tab-active-text);
+}
+
+#star-btn {
+  padding: 6px 8px;
+  background: var(--button-bg);
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0 4px 4px 0;
+  color: var(--tab-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+#star-btn:hover {
+  background: var(--button-hover-bg);
+  color: #f0c674;
+}
+
+/* --- Star dropdown menu --- */
+
+#star-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 4px;
+  background: var(--button-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  z-index: 50;
+}
+
+#star-menu.hidden {
+  display: none;
+}
+
+.star-item {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--tab-text);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.star-item:hover {
+  background: var(--button-hover-bg);
+  color: var(--tab-active-text);
+}
+
+.star-empty {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
+/* --- Config button --- */
+
+#config-btn {
+  margin: 4px 8px 8px;
+  padding: 6px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  color: var(--tab-text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+#config-btn:hover {
+  background: var(--button-hover-bg);
+  color: var(--tab-active-text);
+}
+
+/* --- Terminal --- */
+
+#terminal-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-wrapper {
+  position: absolute;
+  inset: 0;
+  display: none;
+  padding: 4px;
+}
+
+.terminal-wrapper.active {
+  display: block;
+}
+
+.terminal-wrapper .xterm {
+  height: 100%;
+}
+
+.terminal-wrapper .xterm-viewport {
+  overflow-y: auto !important;
+}
+
+/* --- Config overlay --- */
+
+#config-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#config-overlay.hidden {
+  display: none;
+}
+
+#config-panel {
+  background: var(--sidebar-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--tab-active-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.config-close-btn {
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--tab-text);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.config-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--tab-active-text);
+}
+
+.config-section {
+  padding: 12px 16px;
+}
+
+.config-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--tab-text);
+  margin-bottom: 8px;
+}
+
+.config-options {
+  display: flex;
+  gap: 6px;
+}
+
+.theme-btn {
+  flex: 1;
+  padding: 6px 0;
+  background: var(--button-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  color: var(--tab-text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.theme-btn:hover {
+  background: var(--button-hover-bg);
+  color: var(--tab-active-text);
+}
+
+.theme-btn.active {
+  border-color: var(--accent);
+  color: var(--tab-active-text);
+}
+
+#font-input,
+#font-size-input,
+#starred-name,
+#starred-cmd {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--button-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--tab-active-text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+#font-input:focus,
+#font-size-input:focus,
+#starred-name:focus,
+#starred-cmd:focus {
+  border-color: var(--accent);
+}
+
+#font-size-input {
+  width: 80px;
+}
+
+/* --- Starred commands in config --- */
+
+.starred-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.starred-item-name {
+  font-size: 12px;
+  color: var(--tab-active-text);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.starred-item-cmd {
+  flex: 1;
+  font-size: 11px;
+  color: var(--tab-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.starred-item-del {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: var(--tab-text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.starred-item-del:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #d25252;
+}
+
+.starred-add {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.starred-add input {
+  flex: 1;
+  min-width: 0;
+}
+
+#starred-add-btn {
+  padding: 7px 12px;
+  background: var(--button-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--tab-text);
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+#starred-add-btn:hover {
+  background: var(--button-hover-bg);
+  color: var(--tab-active-text);
+}
