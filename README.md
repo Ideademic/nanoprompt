@@ -10,14 +10,48 @@ Full PTY interactivity — nano, vim, and Claude Code all work. Three built-in t
 
 - **Tabbed terminals** with full PTY support (not just a command runner — interactive TUI apps work)
 - **Tab titles** update automatically from shell/program escape sequences
-- **3 themes**: Espresso, Darcula, Default — live-switchable, applies to all tabs instantly
+- **Multiple themes**: Espresso, Darcula, Default, and more — live-switchable, applies to all tabs instantly
+- **Session restoration**: Close your window, re-open the app, your terminal sessions are still there.
 - **Custom fonts**: type any installed font name in settings
 - **Starred commands**: save named commands (e.g. "Claude Code") and launch them from the sidebar
 - **WebGL rendering** with automatic canvas fallback
 - **Keyboard shortcuts**: Cmd/Ctrl+T new tab, Cmd/Ctrl+, settings, Escape to close panels
-- **Cross-platform**: macOS (.dmg), Windows (.exe), Linux (.AppImage)
+- **Cross-platform**: macOS (.dmg), Windows (.exe), Linux (.AppImage, .deb, .rpm)
 
 ## Install
+
+We serve this on package managers! Install it over **Homebrew** (macOS/Linux) or **Scoop** (Windows).
+Please note, on macOS, our builds are not signed or notarized and will be quarantined, approve them in System Settings or remove the quarantine attribute.
+
+### Homebrew
+
+First, tap our tap repository if you haven't already with:
+
+```bash
+brew tap ideademic/tap
+```
+
+then to install, run:
+
+```bash
+brew install --cask nanoprompt
+```
+
+### Scoop
+
+First, add our bucket if you haven't already with:
+
+```powershell
+scoop bucket add ideademic https://github.com/Ideademic/bucket
+```
+
+then to install, run:
+
+```powershell
+scoop install nanoprompt
+```
+
+### Without Package Manager
 
 Grab a build from [Releases](../../releases), or build from source:
 
