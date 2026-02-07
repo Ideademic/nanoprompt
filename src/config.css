@@ -1,0 +1,231 @@
+:root {
+  --sidebar-bg: #2a2a2a;
+  --button-bg: #3c3c3c;
+  --button-hover-bg: #454545;
+  --tab-text: #aaaaaa;
+  --tab-active-text: #ffffff;
+  --accent: #6c99bb;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--sidebar-bg);
+  user-select: none;
+}
+
+#config-panel {
+  padding: 4px 0;
+}
+
+.config-section {
+  padding: 12px 16px;
+}
+
+.config-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--tab-text);
+  margin-bottom: 8px;
+}
+
+/* --- Theme select --- */
+
+.theme-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+#theme-select {
+  flex: 1;
+  padding: 7px 10px;
+  background: var(--button-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--tab-active-text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+#theme-select:focus {
+  border-color: var(--accent);
+}
+
+#theme-select option {
+  background: var(--button-bg);
+  color: var(--tab-active-text);
+}
+
+.theme-info-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: none;
+  color: var(--tab-text);
+  font-size: 11px;
+  font-style: italic;
+  font-family: Georgia, serif;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.theme-info-btn:hover {
+  border-color: var(--accent);
+  color: var(--tab-active-text);
+}
+
+.theme-info-btn.hidden {
+  display: none;
+}
+
+/* --- Theme source popup --- */
+
+.theme-source-popup {
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--tab-text);
+}
+
+.theme-source-popup.hidden {
+  display: none;
+}
+
+.theme-source-popup a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.theme-source-popup a:hover {
+  text-decoration: underline;
+}
+
+/* --- Inputs --- */
+
+#font-input,
+#font-size-input,
+#starred-name,
+#starred-cmd {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--button-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--tab-active-text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+#font-input:focus,
+#font-size-input:focus,
+#starred-name:focus,
+#starred-cmd:focus {
+  border-color: var(--accent);
+}
+
+#font-size-input {
+  width: 80px;
+}
+
+/* --- Starred commands --- */
+
+.starred-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.starred-item-name {
+  font-size: 12px;
+  color: var(--tab-active-text);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.starred-item-cmd {
+  flex: 1;
+  font-size: 11px;
+  color: var(--tab-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.starred-item-del {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: var(--tab-text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.starred-item-del:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #d25252;
+}
+
+.starred-add {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.starred-add input {
+  flex: 1;
+  min-width: 0;
+}
+
+#starred-add-btn {
+  padding: 7px 12px;
+  background: var(--button-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--tab-text);
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+#starred-add-btn:hover {
+  background: var(--button-hover-bg);
+  color: var(--tab-active-text);
+}

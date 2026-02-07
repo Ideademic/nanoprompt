@@ -18,39 +18,6 @@
       <button id="config-btn">Config</button>
     </aside>
     <main id="terminal-container"></main>
-    <div id="config-overlay" class="hidden">
-      <div id="config-panel">
-        <div class="config-header">
-          <span>Settings</span>
-          <span id="config-close" class="config-close-btn">&times;</span>
-        </div>
-        <div class="config-section">
-          <label class="config-label">Theme</label>
-          <div id="theme-options" class="config-options">
-            <button class="theme-btn active" data-theme="espresso">Espresso</button>
-            <button class="theme-btn" data-theme="darcula">Darcula</button>
-            <button class="theme-btn" data-theme="default">Default</button>
-          </div>
-        </div>
-        <div class="config-section">
-          <label class="config-label" for="font-input">Font Family</label>
-          <input id="font-input" type="text" placeholder="System default" spellcheck="false" autocomplete="off" />
-        </div>
-        <div class="config-section">
-          <label class="config-label" for="font-size-input">Font Size</label>
-          <input id="font-size-input" type="number" min="8" max="32" step="1" />
-        </div>
-        <div class="config-section">
-          <label class="config-label">Starred Commands</label>
-          <div id="starred-list"></div>
-          <div class="starred-add">
-            <input id="starred-name" type="text" placeholder="Name" spellcheck="false" />
-            <input id="starred-cmd" type="text" placeholder="Command" spellcheck="false" />
-            <button id="starred-add-btn">Add</button>
-          </div>
-        </div>
-      </div>
-    </div>
     <div id="quit-overlay" class="hidden">
       <div id="quit-panel">
         <p id="quit-message"></p>

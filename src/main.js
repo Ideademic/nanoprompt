@@ -49,10 +49,6 @@ function loadSettings() {
   return { ...DEFAULTS };
 }
 
-function saveSettings() {
-  localStorage.setItem("nanoprompt-settings", JSON.stringify(settings));
-}
-
 let settings = loadSettings();
 
 const tabsEl = document.getElementById("tabs");
@@ -61,15 +57,6 @@ const newTabBtn = document.getElementById("new-tab");
 const starBtn = document.getElementById("star-btn");
 const starMenu = document.getElementById("star-menu");
 const configBtn = document.getElementById("config-btn");
-const configOverlay = document.getElementById("config-overlay");
-const configClose = document.getElementById("config-close");
-const fontInput = document.getElementById("font-input");
-const fontSizeInput = document.getElementById("font-size-input");
-const themeBtns = document.querySelectorAll(".theme-btn");
-const starredListEl = document.getElementById("starred-list");
-const starredNameInput = document.getElementById("starred-name");
-const starredCmdInput = document.getElementById("starred-cmd");
-const starredAddBtn = document.getElementById("starred-add-btn");
 const quitOverlay = document.getElementById("quit-overlay");
 const quitMessage = document.getElementById("quit-message");
 const quitCancel = document.getElementById("quit-cancel");
@@ -101,116 +88,43 @@ function applyChrome(name) {
   document.body.style.background = themes[name].terminal.background;
 }
 
-function setTheme(name) {
-  settings.theme = name;
-  applyChrome(name);
-  themeBtns.forEach((btn) =>
-    btn.classList.toggle("active", btn.dataset.theme === name)
-  );
-  for (const [, session] of sessions) {
-    session.term.options.theme = themes[name].terminal;
+// --- Settings changed (from config window) ---
+
+listen("settings-changed", async (event) => {
+  const s = event.payload;
+
+  if (s.theme !== settings.theme) {
+    settings.theme = s.theme;
+    applyChrome(s.theme);
+    for (const [, session] of sessions) {
+      session.term.options.theme = themes[s.theme].terminal;
+    }
   }
-  saveSettings();
-}
 
-async function setFont(name) {
-  settings.fontFamily = name;
-  const css = cssFontFamily(name);
-  await ensureFont(name);
-  for (const [, session] of sessions) {
-    session.term.options.fontFamily = css;
-    session.fitAddon.fit();
+  if (s.fontFamily !== settings.fontFamily) {
+    settings.fontFamily = s.fontFamily;
+    await ensureFont(s.fontFamily);
+    const css = cssFontFamily(s.fontFamily);
+    for (const [, session] of sessions) {
+      session.term.options.fontFamily = css;
+      session.fitAddon.fit();
+    }
   }
-  saveSettings();
-}
 
-function setFontSize(size) {
-  settings.fontSize = size;
-  for (const [, session] of sessions) {
-    session.term.options.fontSize = size;
-    session.fitAddon.fit();
+  if (s.fontSize !== settings.fontSize) {
+    settings.fontSize = s.fontSize;
+    for (const [, session] of sessions) {
+      session.term.options.fontSize = s.fontSize;
+      session.fitAddon.fit();
+    }
   }
-  saveSettings();
-}
 
-// --- Config panel ---
-
-function openConfig() {
-  fontInput.value = settings.fontFamily;
-  fontSizeInput.value = settings.fontSize;
-  themeBtns.forEach((btn) =>
-    btn.classList.toggle("active", btn.dataset.theme === settings.theme)
-  );
-  renderStarredList();
-  configOverlay.classList.remove("hidden");
-}
-
-function closeConfig() {
-  configOverlay.classList.add("hidden");
-  const session = sessions.get(activeId);
-  if (session) session.term.focus();
-}
-
-configBtn.addEventListener("click", openConfig);
-configClose.addEventListener("click", closeConfig);
-configOverlay.addEventListener("click", (e) => {
-  if (e.target === configOverlay) closeConfig();
+  settings.starred = s.starred;
 });
 
-themeBtns.forEach((btn) =>
-  btn.addEventListener("click", () => setTheme(btn.dataset.theme))
-);
+// --- Config ---
 
-let fontDebounce = null;
-fontInput.addEventListener("input", () => {
-  clearTimeout(fontDebounce);
-  fontDebounce = setTimeout(() => setFont(fontInput.value), 300);
-});
-
-fontSizeInput.addEventListener("change", () => {
-  const v = parseInt(fontSizeInput.value, 10);
-  if (v >= 8 && v <= 32) setFontSize(v);
-});
-
-// --- Starred commands (config) ---
-
-function renderStarredList() {
-  starredListEl.innerHTML = "";
-  settings.starred.forEach((entry, i) => {
-    const row = document.createElement("div");
-    row.className = "starred-item";
-    const name = document.createElement("span");
-    name.className = "starred-item-name";
-    name.textContent = entry.name;
-    const cmd = document.createElement("span");
-    cmd.className = "starred-item-cmd";
-    cmd.textContent = entry.command;
-    cmd.title = entry.command;
-    const del = document.createElement("button");
-    del.className = "starred-item-del";
-    del.textContent = "\u00d7";
-    del.addEventListener("click", () => {
-      settings.starred.splice(i, 1);
-      saveSettings();
-      renderStarredList();
-    });
-    row.appendChild(name);
-    row.appendChild(cmd);
-    row.appendChild(del);
-    starredListEl.appendChild(row);
-  });
-}
-
-starredAddBtn.addEventListener("click", () => {
-  const name = starredNameInput.value.trim();
-  const command = starredCmdInput.value.trim();
-  if (!name || !command) return;
-  settings.starred.push({ name, command });
-  saveSettings();
-  starredNameInput.value = "";
-  starredCmdInput.value = "";
-  renderStarredList();
-});
+configBtn.addEventListener("click", () => invoke("open_config"));
 
 // --- Star dropdown menu ---
 
@@ -416,19 +330,13 @@ document.addEventListener("keydown", (e) => {
   }
   if ((e.metaKey || e.ctrlKey) && e.key === ",") {
     e.preventDefault();
-    if (configOverlay.classList.contains("hidden")) {
-      openConfig();
-    } else {
-      closeConfig();
-    }
+    invoke("open_config");
   }
   if (e.key === "Escape") {
     if (!quitOverlay.classList.contains("hidden")) {
       quitOverlay.classList.add("hidden");
       const session = sessions.get(activeId);
       if (session) session.term.focus();
-    } else if (!configOverlay.classList.contains("hidden")) {
-      closeConfig();
     }
     starMenu.classList.add("hidden");
   }

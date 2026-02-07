@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Settings</title>
+    <link rel="stylesheet" href="/src/config.css" />
+    <script type="module" src="/src/config.js"></script>
+  </head>
+  <body>
+    <div id="config-panel">
+      <div class="config-section">
+        <label class="config-label" for="theme-select">Theme</label>
+        <div class="theme-row">
+          <select id="theme-select"></select>
+          <span id="theme-info" class="theme-info-btn hidden">i</span>
+        </div>
+        <div id="theme-source-popup" class="theme-source-popup hidden"></div>
+      </div>
+      <div class="config-section">
+        <label class="config-label" for="font-input">Font Family</label>
+        <input id="font-input" type="text" placeholder="System default" spellcheck="false" autocomplete="off" />
+      </div>
+      <div class="config-section">
+        <label class="config-label" for="font-size-input">Font Size</label>
+        <input id="font-size-input" type="number" min="8" max="32" step="1" />
+      </div>
+      <div class="config-section">
+        <label class="config-label">Starred Commands</label>
+        <div id="starred-list"></div>
+        <div class="starred-add">
+          <input id="starred-name" type="text" placeholder="Name" spellcheck="false" />
+          <input id="starred-cmd" type="text" placeholder="Command" spellcheck="false" />
+          <button id="starred-add-btn">Add</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

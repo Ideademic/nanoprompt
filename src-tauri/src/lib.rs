@@ -232,6 +232,25 @@ fn close_pty(state: State<'_, PtyState>, id: u32) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn open_config(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("config") {
+        let _ = window.set_focus();
+        return Ok(());
+    }
+    tauri::WebviewWindowBuilder::new(
+        &app,
+        "config",
+        tauri::WebviewUrl::App("config.html".into()),
+    )
+    .title("Settings")
+    .inner_size(420.0, 520.0)
+    .resizable(false)
+    .build()
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 fn force_quit(app: AppHandle) {
     app.exit(0);
 }
@@ -256,12 +275,15 @@ pub fn run() {
             resize_pty,
             close_pty,
             load_font,
+            open_config,
             force_quit,
         ])
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
-                let _ = window.hide();
+            if window.label() == "main" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
             }
         })
         .build(tauri::generate_context!())
