@@ -375,12 +375,7 @@ pub fn run() {
             if window.label() == "main" {
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
-                    let app = window.app_handle();
-                    if has_running_sessions(app) {
-                        let _ = app.emit("confirm-quit", ());
-                    } else {
-                        let _ = window.hide();
-                    }
+                    let _ = window.hide();
                 }
             }
         })
