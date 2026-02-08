@@ -4,6 +4,7 @@ use std::io::{Read, Write};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 
 struct PtySession {
     master: Box<dyn MasterPty + Send>,
@@ -251,7 +252,20 @@ fn open_config(app: AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn close_window(app: AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.hide();
+    }
+}
+
+#[tauri::command]
 fn force_quit(app: AppHandle) {
+    let state = app.state::<PtyState>();
+    if let Ok(mut sessions) = state.sessions.lock() {
+        for (_, mut session) in sessions.drain() {
+            let _ = session.child.kill();
+        }
+    }
     app.exit(0);
 }
 
@@ -269,6 +283,68 @@ pub fn run() {
             sessions: Mutex::new(HashMap::new()),
             next_id: AtomicU32::new(1),
         })
+        .setup(|app| {
+            let handle = app.handle();
+
+            let app_menu = SubmenuBuilder::new(handle, "nanoprompt")
+                .item(&PredefinedMenuItem::about(handle, None, None)?)
+                .separator()
+                .item(&MenuItemBuilder::new("Settings...")
+                    .id("settings")
+                    .accelerator("CmdOrCtrl+,")
+                    .build(handle)?)
+                .separator()
+                .item(&PredefinedMenuItem::hide(handle, None)?)
+                .item(&PredefinedMenuItem::hide_others(handle, None)?)
+                .item(&PredefinedMenuItem::show_all(handle, None)?)
+                .separator()
+                .item(&MenuItemBuilder::new("Quit nanoprompt")
+                    .id("quit")
+                    .accelerator("CmdOrCtrl+Q")
+                    .build(handle)?)
+                .build()?;
+
+            let file_menu = SubmenuBuilder::new(handle, "File")
+                .item(&MenuItemBuilder::new("New Tab")
+                    .id("new_tab")
+                    .accelerator("CmdOrCtrl+T")
+                    .build(handle)?)
+                .separator()
+                .item(&MenuItemBuilder::new("Close Tab")
+                    .id("close_tab")
+                    .accelerator("CmdOrCtrl+W")
+                    .build(handle)?)
+                .item(&MenuItemBuilder::new("Close Window")
+                    .id("close_window")
+                    .accelerator("CmdOrCtrl+Shift+W")
+                    .build(handle)?)
+                .build()?;
+
+            let edit_menu = SubmenuBuilder::new(handle, "Edit")
+                .item(&PredefinedMenuItem::undo(handle, None)?)
+                .item(&PredefinedMenuItem::redo(handle, None)?)
+                .separator()
+                .item(&PredefinedMenuItem::cut(handle, None)?)
+                .item(&PredefinedMenuItem::copy(handle, None)?)
+                .item(&PredefinedMenuItem::paste(handle, None)?)
+                .item(&PredefinedMenuItem::select_all(handle, None)?)
+                .build()?;
+
+            let window_menu = SubmenuBuilder::new(handle, "Window")
+                .item(&PredefinedMenuItem::minimize(handle, None)?)
+                .item(&PredefinedMenuItem::maximize(handle, None)?)
+                .build()?;
+
+            let menu = MenuBuilder::new(handle)
+                .item(&app_menu)
+                .item(&file_menu)
+                .item(&edit_menu)
+                .item(&window_menu)
+                .build()?;
+
+            app.set_menu(menu)?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             create_pty,
             write_pty,
@@ -276,13 +352,35 @@ pub fn run() {
             close_pty,
             load_font,
             open_config,
+            close_window,
             force_quit,
         ])
+        .on_menu_event(|app, event| {
+            match event.id().as_ref() {
+                "settings" => { let _ = open_config(app.clone()); }
+                "new_tab" => { let _ = app.emit("menu-new-tab", ()); }
+                "close_tab" => { let _ = app.emit("menu-close-tab", ()); }
+                "close_window" => { close_window(app.clone()); }
+                "quit" => {
+                    if has_running_sessions(app) {
+                        let _ = app.emit("confirm-quit", ());
+                    } else {
+                        app.exit(0);
+                    }
+                }
+                _ => {}
+            }
+        })
         .on_window_event(|window, event| {
             if window.label() == "main" {
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
-                    let _ = window.hide();
+                    let app = window.app_handle();
+                    if has_running_sessions(app) {
+                        let _ = app.emit("confirm-quit", ());
+                    } else {
+                        let _ = window.hide();
+                    }
                 }
             }
         })
@@ -301,11 +399,6 @@ pub fn run() {
             tauri::RunEvent::ExitRequested { api, .. } => {
                 if has_running_sessions(app_handle) {
                     api.prevent_exit();
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                        let _ = app_handle.emit("confirm-quit", ());
-                    }
                 }
             }
             _ => {}

@@ -28,13 +28,43 @@ body {
 }
 
 #sidebar {
-  width: 200px;
-  min-width: 200px;
+  width: var(--sidebar-width, 200px);
+  min-width: 0;
   background: var(--sidebar-bg);
   display: flex;
   flex-direction: column;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   user-select: none;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: width 0.15s ease;
+}
+
+#sidebar.dragging {
+  transition: none;
+}
+
+#sidebar.collapsed #tabs,
+#sidebar.collapsed #new-tab-row,
+#sidebar.collapsed #config-btn {
+  display: none;
+}
+
+#sidebar-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+#sidebar-handle:hover,
+#sidebar-handle.active {
+  background: var(--accent);
+  opacity: 0.4;
 }
 
 #tabs {

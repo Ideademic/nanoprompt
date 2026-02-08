@@ -51,6 +51,8 @@ function loadSettings() {
 
 let settings = loadSettings();
 
+const sidebarEl = document.getElementById("sidebar");
+const sidebarHandle = document.getElementById("sidebar-handle");
 const tabsEl = document.getElementById("tabs");
 const containerEl = document.getElementById("terminal-container");
 const newTabBtn = document.getElementById("new-tab");
@@ -61,6 +63,65 @@ const quitOverlay = document.getElementById("quit-overlay");
 const quitMessage = document.getElementById("quit-message");
 const quitCancel = document.getElementById("quit-cancel");
 const quitConfirm = document.getElementById("quit-confirm");
+
+// --- Sidebar resize ---
+
+const SIDEBAR_COLLAPSE_THRESHOLD = 60;
+const SIDEBAR_COLLAPSED_WIDTH = 6;
+const SIDEBAR_DEFAULT_WIDTH = 200;
+
+let sidebarWidth = parseInt(localStorage.getItem("nanoprompt-sidebar-width")) || SIDEBAR_DEFAULT_WIDTH;
+let sidebarCollapsed = localStorage.getItem("nanoprompt-sidebar-collapsed") === "true";
+
+function applySidebarWidth() {
+  const w = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth;
+  document.documentElement.style.setProperty("--sidebar-width", w + "px");
+  sidebarEl.classList.toggle("collapsed", sidebarCollapsed);
+}
+
+function persistSidebar() {
+  localStorage.setItem("nanoprompt-sidebar-width", sidebarWidth);
+  localStorage.setItem("nanoprompt-sidebar-collapsed", sidebarCollapsed);
+}
+
+function refitActiveTerminal() {
+  if (activeId !== null) {
+    const session = sessions.get(activeId);
+    if (session) session.fitAddon.fit();
+  }
+}
+
+applySidebarWidth();
+
+sidebarHandle.addEventListener("mousedown", (e) => {
+  e.preventDefault();
+  sidebarEl.classList.add("dragging");
+  sidebarHandle.classList.add("active");
+
+  const onMove = (e) => {
+    let newWidth = e.clientX;
+    if (newWidth < SIDEBAR_COLLAPSE_THRESHOLD) {
+      sidebarCollapsed = true;
+    } else {
+      sidebarCollapsed = false;
+      sidebarWidth = Math.max(SIDEBAR_COLLAPSE_THRESHOLD, Math.min(newWidth, 500));
+    }
+    applySidebarWidth();
+    refitActiveTerminal();
+  };
+
+  const onUp = () => {
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onUp);
+    sidebarEl.classList.remove("dragging");
+    sidebarHandle.classList.remove("active");
+    persistSidebar();
+    refitActiveTerminal();
+  };
+
+  document.addEventListener("mousemove", onMove);
+  document.addEventListener("mouseup", onUp);
+});
 
 // --- Base64 decode ---
 
@@ -242,6 +303,10 @@ async function createTab(initialCommand) {
       invoke("write_pty", { id, data: "\x1b\r" });
       return false;
     }
+    // Let Cmd+W bubble up to the document keydown handler
+    if (e.type === "keydown" && (e.metaKey || e.ctrlKey) && e.key === "w") {
+      return false;
+    }
     return true;
   });
 
@@ -332,6 +397,14 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     invoke("open_config");
   }
+  if ((e.metaKey || e.ctrlKey) && e.key === "w") {
+    e.preventDefault();
+    if (e.shiftKey) {
+      invoke("close_window");
+    } else {
+      if (activeId !== null) closeTab(activeId);
+    }
+  }
   if (e.key === "Escape") {
     if (!quitOverlay.classList.contains("hidden")) {
       quitOverlay.classList.add("hidden");
@@ -340,6 +413,13 @@ document.addEventListener("keydown", (e) => {
     }
     starMenu.classList.add("hidden");
   }
+});
+
+// --- Menu events (from native menu bar) ---
+
+listen("menu-new-tab", () => createTab());
+listen("menu-close-tab", () => {
+  if (activeId !== null) closeTab(activeId);
 });
 
 // --- Quit confirmation ---

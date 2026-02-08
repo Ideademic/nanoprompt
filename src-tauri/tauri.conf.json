@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "nanoprompt",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "identifier": "com.ideademic.nanoprompt",
   "build": {
     "beforeBuildCommand": "pnpm build",
@@ -17,7 +17,9 @@
         "width": 1000,
         "height": 700,
         "resizable": true,
-        "decorations": true
+        "decorations": true,
+        "minWidth": 325,
+        "minHeight": 225
       }
     ],
     "security": {
